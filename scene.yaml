@@ -1,94 +1,88 @@
-cameras:
-    camera1:
-        type: perspective
-
-lights:
-    light1:
-        type: directional
-        direction: [0, 1, -.5]
-        diffuse: .1
-        ambient: .3
-    light2:
-        visible: true
-        type: point
-        position: [-74.0170, 40.7031, 100]
-        origin: world
-        ambient: .3
-        diffuse: 1
-        specular: .2
+scene:
+    animated: true
 
 sources:
-    osm:
+    osm: 
         type: TopoJSON
-        url:  https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-HqUVidw
+        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-N5bAaex
         max_zoom: 16
+    normals:
+        type: Raster
+        url: https://terrain-preview.mapzen.com/terrarium/{z}/{x}/{y}.png
+        max_zoom: 15
+
+styles: 
+    hillshade:
+        base: raster
+        shaders:
+            blocks:
+                global: |
+                    float unpack(vec4 h) {
+                        return (h.r * 1. + h.g / 256. + h.b / 65536.);
+                    }
+                color: |
+                    // Normal from heightmap
+                    // adapted from
+                    // http://stackoverflow.com/questions/5281261/generating-a-normal-map-from-a-height-map
+                    // http://stackoverflow.com/questions/15178225/normal-map-from-height-map-artifact
+                    float px = 1. / 256.;
+                    vec3 off = vec3(-px, 0, px);
+
+                    float h = unpack(color);
+
+                    // Sample heightmap at center, left, right, above, below
+                    float h01 = unpack(texture2D(u_raster_texture, vec2(v_texcoord + off.xy)));
+                    float h21 = unpack(texture2D(u_raster_texture, vec2(v_texcoord + off.zy)));
+                    float h10 = unpack(texture2D(u_raster_texture, vec2(v_texcoord + off.yx)));
+                    float h12 = unpack(texture2D(u_raster_texture, vec2(v_texcoord + off.yz)));
+
+                    // left/right + up/down kernel (softer)
+                    vec3 va = normalize(vec3(off.xy*-2.,h21-h01));
+                    vec3 vb = normalize(vec3(off.yx*-2.,h12-h10));
+
+                    normal = normalize(cross(va, vb));
+
+                    // adjust width of line based on normals to produce thinner line on flatter surfaces
+                    float adj = (1. / normal.z) * 1. - .9999;
+                    float w = 20. * adj * (1.5 - fract(u_map_position.z));
+                    float val = fract(h  * (250. * (1. + fract(u_time * .001))));
+                    float triangle = abs(1. * val - 1.0);
+                    float square = smoothstep(.0, w, triangle);
+                    square *= smoothstep(w, w+w, val);
+                    color.rgb = vec3(square);
+
+                    val = fract(h  * (1000. * (1. + fract(u_time * .001))));
+                    triangle = abs(1. * val - 1.0);
+                    square = smoothstep(.0, w, triangle);
+                    square *= smoothstep(w, 1., val);
+                    color.rgb *= vec3(square);
+
+
+                    color.a = 1.0;
 
 layers:
+    terrain:
+        data: { source: normals, layer: _default }
+        draw:
+            hillshade:
+                order: 0
+                color: "#ff0000" 
+
     earth:
         data: { source: osm }
         draw:
-            polygons:
-                order: function() { return feature.sort_key; }
-                color: '#ddeeee'
+            lines: 
+                order: 2
+                color: [.3, .3, .3]
+                width: 1px
 
-    landuse:
-        data: { source: osm }
+    places:
+        data: { source: osm}
+        filter: 
+            kind: [city]
         draw:
-            polygons:
-                order: function() { return feature.sort_key; }
-                color: '#aaffaa'
-
-    water:
-        data: { source: osm }
-        draw:
-            polygons:
-                order: function() { return feature.sort_key; }
-                color: '#003366'
-
-    roads:
-        data: { source: osm }
-        filter:
-            not: { kind: ["path", "rail"] }
-        draw:
-            lines:
-                order: function() { return feature.sort_key; }
-                color: gray
-                width: 8
-                cap: round
-        highway:
-            filter:
-                kind: highway
-            draw:
-                lines:
-                    order: function() { return feature.sort_key; }
-                    color: '#cc6666'
-                    width: 12
-                    outline:
-                        color: grey
-                        width: 1.5
-        minor_road:
-            filter:
-                kind: minor_road
-            draw:
-                lines:
-                    order: function() { return feature.sort_key; }
-                    color: lightgrey
-                    width: 5
-
-    buildings:
-        data: { source: osm }
-        draw:
-            polygons:
-                order: function() { return feature.sort_key; }
-                color: |
-                    function () {
-                        var h = feature.height || 20;
-                        h = Math.min((h + 50)/ 255, .8); // max brightness: .8
-                        h = Math.max(h, .4); // min brightness: .4
-                        return [h, h, h];
-                    }
-        3d-buildings:
-            filter: { $zoom: { min: 15 } }
-            draw:
-                polygons:
-                    extrude: function () { return feature.height > 20 || $zoom >= 16; }
+            text:
+                font:
+                    fill: white
+                    size: 16px
+                    stroke: { color: '#444', width: 4px}
