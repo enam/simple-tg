@@ -4,7 +4,7 @@ scene:
 sources:
     osm: 
         type: TopoJSON
-        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-N5bAaex
+        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-JUsa0Gc
         max_zoom: 16
     normals:
         type: Raster
@@ -12,7 +12,6 @@ sources:
         max_zoom: 15
 
 styles: 
-
     hillshade:
         base: raster
         shaders:
@@ -21,7 +20,6 @@ styles:
                     float unpack(vec4 h) {
                         return (h.r * 1. + h.g / 256. + h.b / 65536.);
                     }
-
                 color: |
                     // Normal from heightmap
                     // adapted from
@@ -49,17 +47,18 @@ styles:
                     float w = 20. * adj * (1.5 - fract(u_map_position.z));
                     float val = fract(h  * (250. * (1. + fract(u_time * .001))));
                     float triangle = abs(1. * val - 1.0);
-                    float square = smoothstep(0.0,w, triangle);
+                    float square = smoothstep(.0, w, triangle);
                     square *= smoothstep(w, w+w, val);
                     color.rgb = vec3(square);
 
                     val = fract(h  * (1000. * (1. + fract(u_time * .001))));
                     triangle = abs(1. * val - 1.0);
                     square = smoothstep(.0, w, triangle);
-                    square *= smoothstep(1., w+w, val);
+                    square *= smoothstep(w, w+w, val);
                     color.rgb *= vec3(square);
 
-                    color.a = 0.8;
+
+                    color.a = 1.0;
 
 layers:
     terrain:
@@ -67,7 +66,6 @@ layers:
         draw:
             hillshade:
                 order: 0
-                color: "#ff0000" 
 
     earth:
         data: { source: osm }

@@ -11,7 +11,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simple demo – Tangram</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-beta.2/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet.css" />
 
 
     <style>
@@ -34,7 +34,7 @@
     <div id="map"></div>
 
     <!-- leaflet -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-beta.2/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet.js"></script>
 
     <!-- Main tangram library -->
     <script src="http://tangrams.github.io/terrain-demos/lib/tangram.min.js"></script>
@@ -52,10 +52,10 @@
     }
 
     map = (function () {
-    'use strict';
+        'use strict';
 
-    var map_start_location = [37.8090, -122.2220, 12]; // Oakland
-
+    var map_start_location = [41.3863, -122.2512, 12]; // Oakland
+    //41.3863/-122.2512
     /*** URL parsing ***/
 
     // leaflet-style URL hash pattern:
@@ -86,7 +86,8 @@
         "keyboardZoomOffset" : .05,
         "minZoom" : 8,
         "maxZoom" : 16,
-        "maxBounds" : bounds
+        "maxBounds" : bounds,
+        "zoomSnap" : 0
         }
     );
 
@@ -119,13 +120,39 @@
     // setView expects format ([lat, long], zoom)
     map.setView(map_start_location.slice(0, 3), map_start_location[2]);
 
+
+    
+    
+
+
     var hash = new L.Hash(map);
 
     layer.addTo(map);
 
+
+
     return map;
 
     }());
+
+    // programatic zoom and pan
+    var zoomIt = function(){
+        //if(map.getZoom() < 15){
+            //map.zoomIn(0.1);
+            
+        //}
+        
+        window.setTimeout(function(){
+            var randomNumber1 = Math.floor(Math.random() * 2) - 1 * .001;
+            var randomNumber2 = Math.floor(Math.random() * 2) - 1 * .001;
+            var lat = (map.getCenter().lat) + randomNumber1;
+            var lon = (map.getCenter().lng) + randomNumber2;
+            map.flyTo([lat,lon],map.getZoom());
+            zoomIt();
+        }, 30000);
+    };
+    //zoomIt();
+    
 
     </script>
 
