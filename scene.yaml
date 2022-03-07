@@ -4,7 +4,7 @@ scene:
 sources:
     osm: 
         type: TopoJSON
-        url: https://vector.mapzen.com/osm/all/{z}/{x}/{y}.topojson?api_key=vector-tiles-N5bAaex
+        url: https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
         max_zoom: 16
     normals:
         type: Raster
